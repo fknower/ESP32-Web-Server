@@ -1,47 +1,3 @@
-// Load Wi-Fi library
-#include <WiFi.h>
-
-// Network credentials Here
-const char* ssid     = "ESP32-Network";
-const char* password = "zabeck2";
-
-// Set web server port number to 80
-WiFiServer server(80);
-
-// Variable to store the HTTP request
-String header;
-
-//variables to store the current LED states
-String statePin16 = "off";
-String statePin17 = "off";
-//Output variable to GPIO pins
-const int ledPin16 = 16;
-const int ledPin17 = 17;
-
-// Current time
-unsigned long currentTime = millis();
-// Previous time
-unsigned long previousTime = 0;
-// Define timeout time in milliseconds
-const long timeoutTime = 2000;
-
-void setup() {
-  Serial.begin(115200);
-  
-  pinMode(ledPin16, OUTPUT);      // set the LED pin mode
-  digitalWrite(ledPin16, 0);      // turn LED off by default
-  pinMode(ledPin17, OUTPUT);      // set the LED pin mode
-  digitalWrite(ledPin17, 0);      // turn LED off by default
-
-  WiFi.softAP(ssid,password);
-  
-  // Print IP address and start web server
-  Serial.println("");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.softAPIP());
-  server.begin();
-}
-
 void loop() {
   WiFiClient client = server.available();   // Listen for incoming clients
 
@@ -86,6 +42,15 @@ void loop() {
               digitalWrite(ledPin17, LOW);                //turns the LED off
             }
 
+            if (header.indexOf("GET /BUILTINLED/on") >= 0){
+              statePinBuiltIn = "on";
+              digitalWrite(LED_BUILTIN, HIGH);
+            } else if (header.indexOf("GET /BUILTINLED/off") >= 0) {
+              statePinBuiltIn = "off";
+              digitalWrite(LED_BUILTIN, LOW);
+            }
+
+
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
@@ -109,7 +74,14 @@ void loop() {
             } else {
               client.println("<p><a href=\"/17/off\"><button class=\"button button2\">OFF</button></a></p>");
             }
+            if (statePinBuiltIn == "off"){
+              client.println("<p><a href=\"/BUILTINLED/on\"><button class=\"button\">Built In ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/BUILTINLED/off\"><button class=\"button button2\">Built In OFF</button></a></p>");
+            }
+
             client.println("</body></html>");
+
 
             // The HTTP response ends with another blank line
             client.println();
